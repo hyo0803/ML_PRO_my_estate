@@ -1,4 +1,5 @@
 data/all_v2.csv
+artifact/model.joblib
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
