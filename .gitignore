@@ -1,1 +1,7 @@
-all_v2.csv
+data/all_v2.csv
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+.env
+.venv/
