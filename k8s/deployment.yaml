@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: estate-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: estate
+  template:
+    metadata:
+      labels:
+        app: estate
+    spec:
+      containers:
+        - name: api
+          image: estate-service:1.0
+          imagePullPolicy: Never  # не ходить в Docker Hub, образ загружен в kind руками
+          ports:
+            - containerPort: 8000
+          resources: # гарантированный минимум (планировщик по нему выбирает ноду)
+            requests:
+              memory: "256Mi"
+              cpu: "250m" # 0.25 ядра
+            limits: # потолок; при превышении памяти под убьют
+              memory: "1Gi"
+              cpu: "500m" # 0.5 ядра
+          startupProbe: # пока не пройдёт — другие пробы не начинаются; даёт время загрузить модель
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 5
+            failureThreshold: 12 # чтобы было 12 * 5 = 60 секунд на стартап
+          readinessProbe: # пока не пройдёт — трафик на под не пойдёт
+            httpGet:
+              path: /ready
+              port: 8000
+            periodSeconds: 5
+          livenessProbe: # если не пройдёт — под убьют и перезапустят
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10
