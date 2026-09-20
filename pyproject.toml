@@ -13,15 +13,16 @@ dependencies = [
     "numpy",
     "scikit-learn>=1.6,<1.7",
     "joblib",
-    "psycopg[binary]",
-    "shap"
+    "psycopg[binary]"
 ]
 
-dependency-groups = [
+[dependency-groups]
+dev = [
     "pytest",
     "httpx",
     "locust",
     "jupyter",
+    "shap",
     "matplotlib",
     "seaborn",
 ]
