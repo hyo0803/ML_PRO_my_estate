@@ -35,4 +35,4 @@ build-backend = "uv_build"
 module-name = "estate"
 
 [tool.pytest.ini_options]
-testpath = ["tests"]
+testpaths = ["tests"]
