@@ -52,6 +52,19 @@ class Prediction(BaseModel):
     latency_ms: float
 
 
+class BatchRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    rows: list[Features] = Field(min_length=1, max_length=1000)
+
+
+class BatchPrediction(BaseModel):
+    prices: list[float] = Field(description="прогнозы стоимости, руб., в порядке rows")
+    model_version: str
+    request_id: str
+    latency_ms: float
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     bundle = joblib.load(settings.model_path)
@@ -64,7 +77,7 @@ async def lifespan(app: FastAPI):
     app.state.pipeline = None
 
 
-app = FastAPI(title="estate-service", version="1.0", lifespan=lifespan)
+app = FastAPI(title="estate-service", version="1.1", lifespan=lifespan)
 
 
 @app.get("/health")
@@ -104,4 +117,26 @@ def predict(x: Features, bg: BackgroundTasks) -> Prediction:
         model_version=version,
         request_id=request_id,
         latency_ms=latency_ms,
+    )
+
+
+@app.post("/v1/predict/batch")
+def predict_batch(req: BatchRequest) -> BatchPrediction:
+    """Все строки собираются в один DataFrame, модель вызывается один раз."""
+    t0 = time.perf_counter()
+    request_id = str(uuid.uuid4())
+    payload = [row.model_dump(mode="json") for row in req.rows]
+    frame = pd.DataFrame(payload).reindex(columns=app.state.meta["features"])
+
+    try:
+        prices = np.expm1(app.state.pipeline.predict(frame)).tolist()
+    except Exception:
+        logger.exception("batch prediction failed, request_id=%s", request_id)
+        raise HTTPException(status_code=500, detail="prediction failed")
+
+    return BatchPrediction(
+        prices=prices,
+        model_version=app.state.version,
+        request_id=request_id,
+        latency_ms=round((time.perf_counter() - t0) * 1000, 2),
     )

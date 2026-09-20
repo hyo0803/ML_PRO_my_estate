@@ -19,3 +19,15 @@ def test_predict_is_deterministic(client, good_row):
     s1 = client.post("/v1/predict", json=good_row).json()["price"]
     s2 = client.post("/v1/predict", json=good_row).json()["price"]
     assert s1 == s2
+
+def test_batch_matches_single(client, good_row):
+    single = client.post("/v1/predict", json=good_row).json()["price"]
+    r = client.post("/v1/predict/batch", json={"rows": [good_row, good_row]})
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["prices"]) == 2
+    assert body["prices"][0] == single
+
+
+def test_batch_empty_is_422(client):
+    assert client.post("/v1/predict/batch", json={"rows": []}).status_code == 422
