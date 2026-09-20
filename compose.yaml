@@ -1,0 +1,24 @@
+services:
+  api:
+    build: .
+    ports: 
+     - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://estate:estate@db:5432/estate
+    depends_on:
+      db:
+        condition: service_healthy
+  
+  db:
+    image: postgres:16
+    environment:
+     POSTGRES_USER: estate
+     POSTGRES_PASSWORD: estate
+     POSTGRES_DB: estate
+    ports: 
+     - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U estate -d estate"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
