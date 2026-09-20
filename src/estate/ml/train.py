@@ -36,8 +36,8 @@ TEST_SIZE = 0.2
 
 # Найдено RandomizedSearchCV в research/baseline.ipynb (CV R2 = 0.8957)
 RF_PARAMS: dict[str, Any] = dict(
-    n_estimators=200,
-    max_depth=20,
+    n_estimators=60,
+    max_depth=10,
     min_samples_leaf=20,
     max_features=0.5,
     n_jobs=-1,
