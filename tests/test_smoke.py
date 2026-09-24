@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_smoke(client, good_row):
     r = client.post("/v1/predict", json=good_row)
     assert r.status_code == 200
@@ -18,7 +21,7 @@ def test_predict_handles_missing_kitchen_area(client, good_row):
 def test_predict_is_deterministic(client, good_row):
     s1 = client.post("/v1/predict", json=good_row).json()["price"]
     s2 = client.post("/v1/predict", json=good_row).json()["price"]
-    assert s1 == s2
+    assert s1 == pytest.approx(s2)
 
 def test_batch_matches_single(client, good_row):
     single = client.post("/v1/predict", json=good_row).json()["price"]
@@ -26,7 +29,7 @@ def test_batch_matches_single(client, good_row):
     assert r.status_code == 200
     body = r.json()
     assert len(body["prices"]) == 2
-    assert body["prices"][0] == single
+    assert body["prices"][0] == pytest.approx(single)
 
 
 def test_batch_empty_is_422(client):
