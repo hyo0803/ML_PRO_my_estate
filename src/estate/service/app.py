@@ -103,11 +103,11 @@ def predict(x: Features, bg: BackgroundTasks) -> Prediction:
     try:
         # Модель предсказывает log1p(цена) — возвращаем в рубли
         price = float(np.expm1(app.state.pipeline.predict(frame)[0]))
-    except Exception:
+    except Exception as err:
         latency_ms = round((time.perf_counter() - t0) * 1000, 2)
         logger.exception("prediction failed, request_id=%s", request_id)
         bg.add_task(db.save_prediction, request_id, payload, None, version, latency_ms, 500)
-        raise HTTPException(status_code=500, detail="prediction failed")
+        raise HTTPException(status_code=500, detail="prediction failed") from err
 
     latency_ms = round((time.perf_counter() - t0) * 1000, 2)
     bg.add_task(db.save_prediction, request_id, payload, price, version, latency_ms, 200)
@@ -130,9 +130,9 @@ def predict_batch(req: BatchRequest) -> BatchPrediction:
 
     try:
         prices = np.expm1(app.state.pipeline.predict(frame)).tolist()
-    except Exception:
+    except Exception as err:
         logger.exception("batch prediction failed, request_id=%s", request_id)
-        raise HTTPException(status_code=500, detail="prediction failed")
+        raise HTTPException(status_code=500, detail="prediction failed") from err
 
     return BatchPrediction(
         prices=prices,

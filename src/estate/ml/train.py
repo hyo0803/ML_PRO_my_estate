@@ -7,7 +7,7 @@
 Из терминала:
     python -m estate.ml.train
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -113,7 +113,7 @@ def train(data_path=None, model_path=None):
     metadata = {
         'model_name': MODEL_NAME,
         'model_version': MODEL_VERSION,
-        'trained_at': datetime.now(timezone.utc).isoformat(timespec='seconds'),
+        'trained_at': datetime.now(UTC).isoformat(timespec='seconds'),
         'n_train': int(len(X_train)),
         # Контракт сервиса: поля запроса в нужном порядке
         'features': list(RAW_FEATURES),
