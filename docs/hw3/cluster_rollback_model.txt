@@ -1,0 +1,7 @@
+before: {"status":"ok","model_version":"estate-v3","model_path":"artifact/model.joblib","log_level":"INFO"}
+champion -> v1
+$ kubectl rollout restart deploy/estate-service
+deployment.apps/estate-service restarted
+deployment "estate-service" successfully rolled out
+after:  {"status":"ok","model_version":"estate-v1","model_path":"artifact/model.joblib","log_level":"INFO"}
+seconds from alias switch to old version answering: 13

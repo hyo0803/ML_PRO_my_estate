@@ -1,0 +1,16 @@
+# MLflow снаружи кластера: http://mlflow.localhost
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlflow
+  namespace: mlops
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: mlflow.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: mlflow, port: {number: 5000}}
