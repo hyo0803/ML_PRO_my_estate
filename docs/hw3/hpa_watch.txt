@@ -17,3 +17,4 @@ estate-service   Deployment/estate-service   cpu: 106%/60%        2         6   
 estate-service   Deployment/estate-service   cpu: 102%/60%        2         6         6          3m45s
 estate-service   Deployment/estate-service   cpu: 76%/60%         2         6         6          4m
 estate-service   Deployment/estate-service   cpu: 10%/60%         2         6         6          4m15s
+estate-service   Deployment/estate-service   cpu: 1%/60%          2         6         6          4m30s
