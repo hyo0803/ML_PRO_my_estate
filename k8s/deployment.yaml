@@ -20,7 +20,7 @@ spec:
             - containerPort: 8000
           envFrom:
             - configMapRef: {name: estate-config}  # MODEL_PATH, LOG_LEVEL
-            - secretRef: {name: estate-secret}    # DATABASE_URL, создаёт пайплайн
+            - secretRef: {name: estate-secrets}    # DATABASE_URL, создаёт пайплайн
           resources: # гарантированный минимум (планировщик по нему выбирает ноду)
             requests:
               memory: "256Mi"
