@@ -7,13 +7,19 @@
 Из терминала:
     python -m estate.ml.train
 """
+import hashlib
+import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import joblib
+import mlflow
 import numpy as np
 import sklearn
+from mlflow import MlflowClient
+from mlflow.exceptions import MlflowException
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
@@ -34,10 +40,16 @@ MODEL_VERSION = '0.1.0'
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
 
+# MLflow: имя в реестре и гейт. Гейт по test MAPE (в процентах, меньше — лучше):
+# новая версия становится champion, только если MAPE ниже на MIN_GAIN п.п.
+REGISTRY_NAME = os.getenv('MODEL_NAME', 'estate')
+EXPERIMENT = os.getenv('MLFLOW_EXPERIMENT', 'estate')
+MIN_GAIN = float(os.getenv('GATE_MIN_GAIN', '0.2'))
+
 # Найдено RandomizedSearchCV в research/baseline.ipynb (CV R2 = 0.8957)
 RF_PARAMS: dict[str, Any] = dict(
     n_estimators=60,
-    max_depth=10,
+    max_depth=int(os.getenv('MAX_DEPTH', '10')),
     min_samples_leaf=20,
     max_features=0.5,
     n_jobs=-1,
@@ -137,7 +149,69 @@ def train(data_path=None, model_path=None):
     joblib.dump(bundle, path, compress=3)
     print(f'Бандл сохранён: {path} ({path.stat().st_size / 1e6:.1f} МБ)')
 
+    if os.getenv('MLFLOW_TRACKING_URI'):
+        log_to_mlflow(pipeline, metadata, Path(data_path))
+
     return bundle
+
+
+def feature_importance_figure(pipeline):
+    """Свой артефакт прогона: важности признаков случайного леса."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    importances = pipeline.named_steps['model'].feature_importances_
+    order = np.argsort(importances)
+    fig, ax = plt.subplots(figsize=(7, 8))
+    ax.barh(np.array(ENGINEERED_FEATURES)[order], importances[order])
+    ax.set_title('RandomForest feature importances')
+    fig.tight_layout()
+    return fig
+
+
+def champion_mape(client):
+    try:
+        mv = client.get_model_version_by_alias(REGISTRY_NAME, 'champion')
+    except MlflowException:
+        return None, None
+    return mv.version, client.get_run(mv.run_id).data.metrics.get('test_mape_pct')
+
+
+def log_to_mlflow(pipeline, metadata, data_path):
+    """Прогон в MLflow, регистрация версии и гейт по MAPE."""
+    import skops.io as sio
+
+    mlflow.set_experiment(EXPERIMENT)
+    client = MlflowClient()
+    test = metadata['metrics']['test']
+    trusted = sio.get_untrusted_types(data=sio.dumps(pipeline))
+
+    with mlflow.start_run() as run:
+        mlflow.log_params({**RF_PARAMS, 'region': settings.region,
+                           'data': str(data_path),
+                           'data_md5': hashlib.md5(data_path.read_bytes()).hexdigest()})
+        mlflow.log_metrics({f'{split}_{k}': float(v)
+                            for split, m in metadata['metrics'].items() for k, v in m.items()})
+        mlflow.log_metric('threshold', metadata['threshold'])
+        mlflow.log_dict(metadata, 'metadata.json')
+        mlflow.log_figure(feature_importance_figure(pipeline), 'feature_importances.png')
+        info = mlflow.sklearn.log_model(pipeline, name='model', registered_model_name=REGISTRY_NAME,
+                                        skops_trusted_types=trusted)
+        version = info.registered_model_version
+
+    old_version, old_mape = champion_mape(client)
+    mape = float(test['mape_pct'])
+    promoted = bool(old_mape is None or mape < old_mape - MIN_GAIN)
+    client.set_registered_model_alias(REGISTRY_NAME, 'challenger', version)
+    if promoted:
+        client.set_registered_model_alias(REGISTRY_NAME, 'champion', version)
+
+    result = {'run_id': run.info.run_id, 'version': version, 'max_depth': RF_PARAMS['max_depth'],
+              'test_mape_pct': round(mape, 3), 'champion_before': old_version,
+              'champion_mape_before': old_mape, 'min_gain': MIN_GAIN, 'promoted': promoted}
+    print(json.dumps(result, ensure_ascii=False))
+    return result
 
 
 def check(model_path=None, sample=None):
