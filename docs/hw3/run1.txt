@@ -1,0 +1,23 @@
+2026/10/04 22:19:27 INFO mlflow.tracking.fluent: Experiment with name 'estate' does not exist. Creating a new experiment.
+Matplotlib is building the font cache; this may take a moment.
+2026/10/04 22:19:39 INFO mlflow.utils.uv_utils: Detected uv project: found uv.lock and pyproject.toml in /Users/yaseminkhertek/Учеба/КУРСЫ/ML PRO/lesson_1/my_project_estate
+2026/10/04 22:19:39 INFO mlflow.utils.uv_utils: Detected uv project: found uv.lock and pyproject.toml in /Users/yaseminkhertek/Учеба/КУРСЫ/ML PRO/lesson_1/my_project_estate
+2026/10/04 22:19:39 INFO mlflow.utils.environment: Detected uv project at /Users/yaseminkhertek/Учеба/КУРСЫ/ML PRO/lesson_1/my_project_estate. Attempting to export requirements via 'uv export'.
+2026/10/04 22:19:39 INFO mlflow.utils.uv_utils: Exported 66 dependencies via uv
+2026/10/04 22:19:39 INFO mlflow.utils.environment: Successfully exported 66 requirements from uv project. Skipping package capture based inference.
+2026/10/04 22:19:39 WARNING mlflow.utils.environment: Failed to resolve installed pip version. ``pip`` will be added to conda.yaml environment spec without a version specifier.
+Successfully registered model 'estate'.
+2026/10/04 22:19:39 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: estate, version 1
+Created version '1' of model 'estate'.
+Загрузка data/all_v2.csv...
+  записей после очистки: 500,364
+  train: 400,291 | test: 100,073
+Обучение пайплайна...
+  test R2=0.8573 | RMSE=0.945 млн руб. | MAPE=14.23%
+  порог: -0.2066
+Бандл сохранён: /tmp/hw3_model.joblib (3.1 МБ)
+🏃 View run angry-newt-958 at: http://127.0.0.1:5050/#/experiments/1/runs/eb230dfd78b54f328298c1bd014a96e0
+🧪 View experiment at: http://127.0.0.1:5050/#/experiments/1
+{"run_id": "eb230dfd78b54f328298c1bd014a96e0", "version": "1", "max_depth": 10, "test_mape_pct": 14.235, "champion_before": null, "champion_mape_before": null, "min_gain": 0.2, "promoted": true}
+estate-rf 0.1.0, порог -0.2066
+Прогноз: 7.11 млн, 4.79 млн, 3.45 млн, 2.54 млн, 6.94 млн

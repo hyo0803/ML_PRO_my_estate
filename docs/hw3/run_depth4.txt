@@ -1,0 +1,21 @@
+2026/10/04 22:19:57 INFO mlflow.utils.uv_utils: Detected uv project: found uv.lock and pyproject.toml in /Users/yaseminkhertek/Учеба/КУРСЫ/ML PRO/lesson_1/my_project_estate
+2026/10/04 22:19:58 INFO mlflow.utils.uv_utils: Detected uv project: found uv.lock and pyproject.toml in /Users/yaseminkhertek/Учеба/КУРСЫ/ML PRO/lesson_1/my_project_estate
+2026/10/04 22:19:58 INFO mlflow.utils.environment: Detected uv project at /Users/yaseminkhertek/Учеба/КУРСЫ/ML PRO/lesson_1/my_project_estate. Attempting to export requirements via 'uv export'.
+2026/10/04 22:19:58 INFO mlflow.utils.uv_utils: Exported 66 dependencies via uv
+2026/10/04 22:19:58 INFO mlflow.utils.environment: Successfully exported 66 requirements from uv project. Skipping package capture based inference.
+2026/10/04 22:19:58 WARNING mlflow.utils.environment: Failed to resolve installed pip version. ``pip`` will be added to conda.yaml environment spec without a version specifier.
+Registered model 'estate' already exists. Creating a new version of this model...
+2026/10/04 22:19:58 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: estate, version 2
+Created version '2' of model 'estate'.
+Загрузка data/all_v2.csv...
+  записей после очистки: 500,364
+  train: 400,291 | test: 100,073
+Обучение пайплайна...
+  test R2=0.7245 | RMSE=1.352 млн руб. | MAPE=21.02%
+  порог: -0.3234
+Бандл сохранён: /tmp/hw3_model.joblib (0.3 МБ)
+🏃 View run illustrious-toad-239 at: http://127.0.0.1:5050/#/experiments/1/runs/6872ea31da364bc0b038398485711159
+🧪 View experiment at: http://127.0.0.1:5050/#/experiments/1
+{"run_id": "6872ea31da364bc0b038398485711159", "version": "2", "max_depth": 4, "test_mape_pct": 21.021, "champion_before": "1", "champion_mape_before": 14.234845135268131, "min_gain": 0.2, "promoted": false}
+estate-rf 0.1.0, порог -0.3234
+Прогноз: 6.15 млн, 5.29 млн, 3.45 млн, 3.54 млн, 8.00 млн

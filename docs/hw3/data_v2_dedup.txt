@@ -1,0 +1,1 @@
+rows 5477006 -> 5475483, dropped 1523 duplicates
