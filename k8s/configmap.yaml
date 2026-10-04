@@ -4,5 +4,5 @@ metadata:
   name: estate-config
 data:
   # путь внутри образа: dockerfile кладёт модель в /app/artifact/
-  MODEL_PATH: artifact/no_such_model.joblib
+  MODEL_PATH: artifact/model.joblib
   LOG_LEVEL: INFO
