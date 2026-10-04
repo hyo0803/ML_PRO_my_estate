@@ -23,7 +23,7 @@ spec:
             - secretRef: {name: estate-secrets}    # DATABASE_URL, создаёт пайплайн
           resources: # гарантированный минимум (планировщик по нему выбирает ноду)
             requests:
-              memory: "256Mi"
+              memory: "1000000000Mi"
               cpu: "250m" # 0.25 ядра
             limits: # потолок; при превышении памяти под убьют
               memory: "1Gi"
