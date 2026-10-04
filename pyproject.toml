@@ -26,6 +26,7 @@ dev = [
     "matplotlib",
     "seaborn",
     "ruff",
+    "dvc>=3.67.1",
 ]
 
 [build-system]
