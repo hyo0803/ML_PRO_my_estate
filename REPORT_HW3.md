@@ -7,12 +7,12 @@
 
 | Пункт | Статус | Ссылка / след |
 |---|---|---|
-| 1. Платформа в кластере (Ingress, MLflow в kind) | не сделано | MLflow поднят локально (`mlflow server`, sqlite, порт 5050), см. журнал проблем |
-| 2. Обучение, реестр, гейт | сделано | [train.py](src/estate/ml/train.py), [run1](docs/hw3/run1.txt), [run2](docs/hw3/run_depth4.txt), [run3](docs/hw3/run_depth16.txt); скрин Model registry: _TODO_ |
-| 3. Сервис по алиасу и откат | сделано локально | [app.py](src/estate/service/app.py) `load_model()`, [rollback_model.txt](docs/hw3/rollback_model.txt) |
+| 1. Платформа в кластере (Ingress, MLflow в kind) | сделано | [platform/](platform/): kind с портом 80, Traefik, MLflow, Ingress `mlflow.localhost` и `estate.localhost`; [kubectl get pods,ingress -A](docs/hw3/cluster_pods_ingress.txt); скрин MLflow: _TODO_ |
+| 2. Обучение, реестр, гейт | сделано | [train.py](src/estate/ml/train.py), [run1](docs/hw3/run1.txt), [run2](docs/hw3/run_depth4.txt), [run3](docs/hw3/run_depth16.txt); то же в кластерном MLflow: [10](docs/hw3/cluster_run_depth10.txt), [4](docs/hw3/cluster_run_depth4.txt), [16](docs/hw3/cluster_run_depth16.txt); скрин Model registry: _TODO_ |
+| 3. Сервис по алиасу и откат | сделано в кластере | [app.py](src/estate/service/app.py) `load_model()`, [configmap](k8s/configmap.yaml), [откат в кластере](docs/hw3/cluster_rollback_model.txt), [локально](docs/hw3/rollback_model.txt) |
 | 4. CI/CD в кластер через runner | не сделано | — |
 | 5. DVC | сделано | [all_v2.csv.dvc](data/all_v2.csv.dvc), [push v1](docs/hw3/dvc_push_v1.txt), [push v2](docs/hw3/dvc_push_v2.txt), [diff](docs/hw3/dvc_diff.txt), [откат](docs/hw3/dvc_rollback.txt), [pull в чистом клоне](docs/hw3/dvc_pull_clean_clone.txt), [data_md5 в MLflow](docs/hw3/data_md5_runs.txt) |
-| 6. HPA | не сделано | — |
+| 6. HPA | сделано частично (1 прогон locust из 3) | [hpa.yaml](k8s/hpa.yaml), [kubectl get hpa -w](docs/hw3/hpa_watch.txt), [describe hpa](docs/hw3/hpa_describe.txt), [top pods](docs/hw3/top_pods_under_load.txt), [locust](docs/hw3/locust_60users.txt); скрин k9s: _TODO_ |
 | 7. Три красных прогона | не сделано | — |
 
 ## Гейт: метрика и запас
@@ -32,7 +32,21 @@
 
 ## Откат модели
 
-`/health` до: `estate-v3`. После переноса `champion` на v1 и перезапуска: `estate-v1`. От смены алиаса до ответа старой версии прошло **3 с**. Алиас перевешивался через API (`set_registered_model_alias`), а не кликом в UI. Сервис перезапускался локально (uvicorn), не через `kubectl rollout restart`.
+**В кластере:** `/health` через `http://estate.localhost` до отката показывал `estate-v3`. Я перенёс `champion` на v1 и выполнил `kubectl rollout restart deploy/estate-service`, после чего `/health` показал `estate-v1`. От смены алиаса до ответа старой версии прошло **13 с**, образ не пересобирался. Алиас перевешивался через API (`set_registered_model_alias`), а не кликом в UI.
+
+Локально (uvicorn, без кластера) то же заняло 3 с.
+
+## HPA
+
+Один прогон locust: 60 пользователей, 3 минуты, через Ingress. Метрики появились примерно через 30 с после создания HPA (до этого `<unknown>` и `FailedGetResourceMetric`). Когда пошла нагрузка, реплик стало 4 через 30 с и 6 через 45 с.
+
+| Пользователи | Реплики | p95, мс | CPU на под |
+|---|---|---|---|
+| 60 | 2 → 6 | 360 | ~285m (≈114% от requests 250m) |
+
+Прогоны на 20 и 100 пользователей не успел.
+
+**requests.** Сейчас `cpu: 250m`, `memory: 256Mi`. Под нагрузкой под занимал до 371Mi, то есть больше запроса. С запасом в треть честный `requests.memory` около 500Mi. В манифесте я его не поменял, потому что не успел проверить после замера.
 
 ## Восемь вопросов
 
@@ -41,8 +55,8 @@
 3. **`--dry-run=client -o yaml | kubectl apply`.** `kubectl create secret` падает с `AlreadyExists`, если секрет уже есть, поэтому второй деплой упал бы на этом шаге. Связка с dry-run только генерирует манифест, а `apply` идемпотентен: создаёт секрет при первом деплое и обновляет при последующих.
 4. **challenger и champion.** challenger — последняя обученная версия, champion — версия, которая прошла гейт и обслуживает трафик. Сервис спрашивает алиас, а не номер, чтобы выбор модели был отделён от образа и манифестов: сменить модель можно в реестре, без пересборки и правки yaml. Откат через алиас меняет только веса, а образ и код остаются прежними (у меня это заняло 3 с плюс рестарт). `rollout undo` откатывает образ и спецификацию пода, то есть код, но модель после него всё равно возьмётся по текущему алиасу.
 5. **Деплой без обученной модели.** Сервис на старте вызывает `get_model_version_by_alias` и падает с `RESOURCE_DOES_NOT_EXIST: Registered Model ... not found`. Под уходит в CrashLoopBackOff. В k9s это видно по росту Restarts и статусу пода, в логах пода — по traceback. В CI `kubectl rollout status` не дожидается готовности и падает по таймауту. (Проверено только локально: тот же вызов без модели в реестре даёт это исключение.)
-6. **Путь запроса до MLflow.** Браузер обращается к `mlflow.localhost:80`. Это порт хоста, проброшенный через `extraPortMappings` в контейнер ноды kind. Там его слушает Traefik (hostPort 80), находит Ingress по Host, отправляет запрос в Service `mlflow` (порт 5000) и дальше в под. `--allowed-hosts` защищает от DNS rebinding: MLflow отвечает 403 на незнакомый заголовок Host. `--cors-allowed-origins` разрешает UI, открытому с `http://mlflow.localhost`, делать запросы к API. Порт задаётся при создании кластера, потому что это проброс порта Docker-контейнера ноды, а у работающего контейнера проброс поменять нельзя, только пересоздать кластер. (Ответ теоретический: п.1 я не сделал.)
-7. **Формула HPA.** `desired = ceil(current × currentCPU / targetCPU)`. Своих замеров нет: п.6 не сделан. Вниз реплики уходят медленнее, потому что у scale-down окно стабилизации 300 с: HPA берёт максимум рекомендаций за 5 минут, чтобы не дёргать реплики на каждом провале нагрузки. Scale-up срабатывает сразу.
+6. **Путь запроса до MLflow.** Браузер обращается к `mlflow.localhost:80`. Это порт хоста, проброшенный через `extraPortMappings` в контейнер ноды kind. Там его слушает Traefik (hostPort 80), находит Ingress по Host, отправляет запрос в Service `mlflow` (порт 5000) и дальше в под. `--allowed-hosts` защищает от DNS rebinding: MLflow отвечает 403 на незнакомый заголовок Host. `--cors-allowed-origins` разрешает UI, открытому с `http://mlflow.localhost`, делать запросы к API. Порт задаётся при создании кластера, потому что это проброс порта Docker-контейнера ноды, а у работающего контейнера проброс поменять нельзя, только пересоздать кластер.
+7. **Формула HPA.** `desired = ceil(current × currentCPU / targetCPU)`. Через 15 с после начала нагрузки на 2 подах было 164%: ceil(2 × 164 / 60) = 6. HPA поставил сначала 4, а через 15 с ещё 6 (события `SuccessfulRescale`: New size 4, затем 6). Скачок за один шаг ограничен политикой scale-up: не больше удвоения или +4 пода за 15 с. На 6 подах загрузка держалась на 102–113%: ceil(6 × 105 / 60) = 11, но maxReplicas = 6, поэтому реплик осталось 6. Вниз реплики уходят медленнее из-за окна стабилизации scale-down в 300 с: HPA берёт максимум рекомендаций за последние 5 минут, чтобы не дёргать реплики на каждом провале нагрузки. Scale-up срабатывает сразу.
 8. **git и DVC.** В git лежит `data/all_v2.csv.dvc` (md5 и размер), `.dvc/config` и код. В хранилище DVC (`../dvc-storage`) лежит сам CSV, адресованный по md5. Как восстановить данные версии N: (1) в реестре открыть версию N и перейти в её run; (2) взять параметр `data_md5`; (3) найти коммит, где в `.dvc` этот md5: `git log -p -- data/all_v2.csv.dvc`; (4) `git checkout <коммит> -- data/all_v2.csv.dvc`; (5) `dvc checkout` (или `dvc pull`, если кэша нет); (6) сверить `md5 data/all_v2.csv`.
 
 ## Журнал проблем
@@ -50,4 +64,6 @@
 | Что | Ошибка | Как нашёл причину | Починка |
 |---|---|---|---|
 | MLflow на :5000 | `curl /health` отдавал `403` ещё до моего сервера | 403 приходил ещё до того, как мой сервер скачался и запустился. На macOS порт 5000 занят AirPlay Receiver | сервер на порту 5050 |
-| Время | на дз 3 оставалось около 2 часов до дедлайна | — | сначала сделал то, что можно проверить локально (п.2, 3, 5). Кластерные пункты 1, 4, 6, 7 не успел |
+| Postgres в новом кластере | под `postgres` висел в `ContainerCreating` (`Pulling image "postgres:16"`), сервис падал с `psycopg.OperationalError: connection refused` | `kubectl get events`: образ бесконечно качался из сети в узел kind | загрузил `postgres:16` в узел через `kind load image-archive`. Чтобы успеть, временно запустил сервис без `DATABASE_URL` (логирование в БД выключено), поэтому строку в БД по `request_id` не проверял |
+| locust через Ingress | 100% ошибок, `NameResolutionError` для `estate.localhost` | curl резолвит `*.localhost`, а Python на macOS нет (та же ошибка у MLflow-клиента на `mlflow.localhost`) | [load/locust_ingress.py](load/locust_ingress.py): запросы на `127.0.0.1` с заголовком `Host: estate.localhost`. К MLflow из Python — через `kubectl port-forward` |
+| Время | на дз 3 оставалось около 2 часов до дедлайна | — | сначала сделал то, что можно проверить локально (п.2, 3, 5). После этого — п.1, откат в кластере и HPA. Пункты 4 и 7 (runner и красные прогоны в CI) не успел |

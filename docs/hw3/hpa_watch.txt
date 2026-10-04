@@ -1,0 +1,19 @@
+NAME             REFERENCE                   TARGETS              MINPODS   MAXPODS   REPLICAS   AGE
+estate-service   Deployment/estate-service   cpu: <unknown>/60%   2         6         2          0s
+estate-service   Deployment/estate-service   cpu: <unknown>/60%   2         6         2          15s
+estate-service   Deployment/estate-service   cpu: 1%/60%          2         6         2          30s
+estate-service   Deployment/estate-service   cpu: 1%/60%          2         6         2          45s
+estate-service   Deployment/estate-service   cpu: 28%/60%         2         6         2          60s
+estate-service   Deployment/estate-service   cpu: 164%/60%        2         6         2          75s
+estate-service   Deployment/estate-service   cpu: 189%/60%        2         6         4          90s
+estate-service   Deployment/estate-service   cpu: 183%/60%        2         6         6          105s
+estate-service   Deployment/estate-service   cpu: 140%/60%        2         6         6          2m
+estate-service   Deployment/estate-service   cpu: 109%/60%        2         6         6          2m15s
+estate-service   Deployment/estate-service   cpu: 105%/60%        2         6         6          2m30s
+estate-service   Deployment/estate-service   cpu: 103%/60%        2         6         6          2m45s
+estate-service   Deployment/estate-service   cpu: 113%/60%        2         6         6          3m
+estate-service   Deployment/estate-service   cpu: 107%/60%        2         6         6          3m15s
+estate-service   Deployment/estate-service   cpu: 106%/60%        2         6         6          3m30s
+estate-service   Deployment/estate-service   cpu: 102%/60%        2         6         6          3m45s
+estate-service   Deployment/estate-service   cpu: 76%/60%         2         6         6          4m
+estate-service   Deployment/estate-service   cpu: 10%/60%         2         6         6          4m15s
