@@ -19,7 +19,10 @@ CREATE TABLE IF NOT EXISTS estate_price_predictions (
 def init() -> None:
     if not settings.database_url:
         return
-    with psycopg.connect(settings.database_url) as conn:
+    # Реплики сервиса стартуют одновременно: без блокировки два CREATE TABLE IF NOT EXISTS
+    # на пустой базе гоняются, и один падает с UniqueViolation в pg_type.
+    with psycopg.connect(settings.database_url) as conn, conn.transaction():
+        conn.execute("SELECT pg_advisory_xact_lock(hashtext('estate_init'))")
         conn.execute(DDL)
 
 

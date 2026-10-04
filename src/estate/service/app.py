@@ -7,8 +7,12 @@ from contextlib import asynccontextmanager
 import joblib
 import numpy as np
 import pandas as pd
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
+from starlette.background import BackgroundTask
 
 from estate import db
 from estate.config import settings
@@ -80,9 +84,29 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="estate-service", version="1.1", lifespan=lifespan)
 
 
+@app.exception_handler(RequestValidationError)
+async def log_validation_error(request: Request, exc: RequestValidationError):
+    """422 тоже пишем в таблицу логов: features — то, что прислали, score пустой."""
+    request_id = str(uuid.uuid4())
+    body = exc.body if isinstance(exc.body, dict) else {"raw": str(exc.body)}
+    version = getattr(app.state, "version", "unknown")
+    bg = BackgroundTask(db.save_prediction, request_id, body, None, version, 0.0, 422)
+    return JSONResponse(
+        status_code=422,
+        content={"detail": jsonable_encoder(exc.errors()), "request_id": request_id},
+        background=bg,
+    )
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "model_version": getattr(app.state, "version", "unknown")}
+    return {
+        "status": "ok",
+        "model_version": getattr(app.state, "version", "unknown"),
+        # приходят из ConfigMap — так снаружи видно, что конфиг доехал
+        "model_path": settings.model_path,
+        "log_level": settings.log_level,
+    }
 
 
 @app.get("/ready")

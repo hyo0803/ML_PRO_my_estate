@@ -44,7 +44,7 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v7
-      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER}/estate-service/sha-${GITHUB_SHA}" >> $GITHUB_ENV #ghcr
+      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/estate-service:sha-${GITHUB_SHA}" >> "$GITHUB_ENV" # sha — в теге
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -58,3 +58,73 @@ jobs:
           tags: ${{ env.IMAGE }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: {contents: read, packages: read}
+    steps:
+      - uses: actions/checkout@v7
+      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/estate-service:sha-${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: кластер kind
+        uses: helm/kind-action@v1
+        with: {cluster_name: estate}
+
+      - name: образ в кластер
+        run: |
+          docker pull "$IMAGE"
+          kind load docker-image "$IMAGE" --name estate
+
+      - name: секреты
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          kubectl create secret generic estate-secrets \
+            --from-literal=POSTGRES_PASSWORD="$DB_PASSWORD" \
+            --from-literal=DATABASE_URL="postgresql://postgres:$DB_PASSWORD@postgres:5432/estate" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: база
+        run: |
+          kubectl apply -f k8s/postgres.yaml
+          kubectl rollout status deploy/postgres --timeout=180s
+
+      - name: сервис
+        run: |
+          kubectl apply -f k8s/
+          kubectl set image deploy/estate-service api="$IMAGE"
+          kubectl rollout status deploy/estate-service --timeout=180s
+
+      - name: smoke
+        run: |
+          kubectl port-forward svc/estate-service 8080:80 > /dev/null &
+          sleep 3
+
+          # конфиг доехал из ConfigMap
+          curl --fail -s --retry 5 --retry-all-errors localhost:8080/health | tee health.json; echo
+          jq -e '.model_path == "artifact/model.joblib"' health.json
+
+          # предсказание осмысленное: цена 2-комнатной квартиры от 100 тыс. до 1 млрд руб.
+          curl --fail -s -X POST localhost:8080/v1/predict \
+            -H "Content-Type: application/json" -d @good.json | tee pred.json; echo
+          python3 -c "import json; r=json.load(open('pred.json')); assert 1e5 <= r['price'] <= 1e9, r"
+
+          # запрос попал в таблицу логов с кодом 200
+          sleep 2
+          RID=$(jq -r .request_id pred.json)
+          kubectl exec deploy/postgres -- psql -U postgres -d estate -tAc \
+            "SELECT status_code FROM estate_price_predictions WHERE request_id = '$RID'" | grep -qx 200
+
+      - name: диагностика
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide
+          kubectl describe deploy/estate-service | tail -20
+          kubectl logs deploy/estate-service --tail=50 || true
