@@ -3,7 +3,7 @@ def test_health(client):
     assert r.status_code == 200
     body = r.json()
     assert "model_version" in body
-    assert body["model_path"].endswith(".pkl")   # намеренно неверно
+    assert body["model_path"].endswith(".joblib")
     assert "log_level" in body
     
     
