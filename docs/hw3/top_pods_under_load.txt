@@ -1,0 +1,7 @@
+NAME                              CPU(cores)   MEMORY(bytes)   
+estate-service-75594b8db7-2ll4s   271m         344Mi           
+estate-service-75594b8db7-8thtt   290m         358Mi           
+estate-service-75594b8db7-8wqv5   287m         208Mi           
+estate-service-75594b8db7-nww5r   277m         371Mi           
+estate-service-75594b8db7-tvgk5   290m         246Mi           
+estate-service-75594b8db7-z9kfc   283m         343Mi           

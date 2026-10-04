@@ -6,3 +6,7 @@ data:
   # путь внутри образа: dockerfile кладёт модель в /app/artifact/
   MODEL_PATH: artifact/model.joblib
   LOG_LEVEL: INFO
+  # модель из реестра MLflow по алиасу; MODEL_PATH остаётся запасным путём без реестра
+  MODEL_NAME: estate
+  MODEL_ALIAS: champion
+  MLFLOW_TRACKING_URI: http://mlflow.mlops:5000

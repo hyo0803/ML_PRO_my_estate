@@ -1,0 +1,15 @@
+# Сервис снаружи кластера: http://estate.localhost (порт 80 ноутбука -> Traefik -> Service)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: estate-service
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: estate.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: estate-service, port: {number: 80}}

@@ -1,0 +1,21 @@
+NAMESPACE            NAME                                               READY   STATUS              RESTARTS   AGE
+default              pod/estate-service-7c6449f89b-5ndxg                1/1     Running             0          13s
+default              pod/estate-service-7c6449f89b-mh4x8                1/1     Running             0          19s
+default              pod/postgres-54ff956494-vqlsn                      0/1     ContainerCreating   0          4m35s
+default              pod/postgres-78ff4f4d55-cbpdx                      0/1     ErrImageNeverPull   0          4m35s
+kube-system          pod/coredns-559f6c778d-45ns8                       1/1     Running             0          31m
+kube-system          pod/coredns-559f6c778d-5964f                       1/1     Running             0          31m
+kube-system          pod/etcd-estate-control-plane                      1/1     Running             0          31m
+kube-system          pod/kindnet-jg274                                  1/1     Running             0          31m
+kube-system          pod/kube-apiserver-estate-control-plane            1/1     Running             0          31m
+kube-system          pod/kube-controller-manager-estate-control-plane   1/1     Running             0          31m
+kube-system          pod/kube-proxy-m8xdw                               1/1     Running             0          31m
+kube-system          pod/kube-scheduler-estate-control-plane            1/1     Running             0          31m
+kube-system          pod/metrics-server-995d47bd7-2k5lx                 0/1     ContainerCreating   0          25m
+local-path-storage   pod/local-path-provisioner-75f7fc7dc5-trwgm        1/1     Running             0          31m
+mlops                pod/mlflow-9f98c4469-tr2d8                         1/1     Running             0          26m
+traefik              pod/traefik-6d9c545874-8cq8m                       1/1     Running             0          25m
+
+NAMESPACE   NAME                                       CLASS     HOSTS              ADDRESS   PORTS   AGE
+default     ingress.networking.k8s.io/estate-service   traefik   estate.localhost             80      13m
+mlops       ingress.networking.k8s.io/mlflow           traefik   mlflow.localhost             80      26m

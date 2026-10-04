@@ -1,0 +1,6 @@
+2026/10/04 22:21:12 INFO mlflow.agent.hint: Load the `instrumenting-with-mlflow-tracing` skill at /Users/yaseminkhertek/Учеба/КУРСЫ/ML PRO/lesson_1/my_project_estate/.venv/lib/python3.12/site-packages/mlflow/assistant/skills/instrumenting-with-mlflow-tracing/SKILL.md before writing any tracing code; it ships with this MLflow install. Set MLFLOW_DISABLE_AGENT_HINT=1 to silence this.
+                          run_id params.max_depth                  params.data_md5  metrics.test_mape_pct
+cf6e500c881d4cfe8a4d4e50814e9194               16 ae21d4d1e9e468419167daca850261a9              11.659928
+bf0e4ccbec354a22af85868bda685e7d               16 00af12733984c983b49f412cef232a9f              11.565681
+6872ea31da364bc0b038398485711159                4 00af12733984c983b49f412cef232a9f              21.021186
+eb230dfd78b54f328298c1bd014a96e0               10 00af12733984c983b49f412cef232a9f              14.234845

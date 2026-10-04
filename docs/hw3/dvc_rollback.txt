@@ -1,0 +1,6 @@
+$ git checkout HEAD~2 -- data/all_v2.csv.dvc && dvc checkout
+M       data/all_v2.csv
+00af12733984c983b49f412cef232a9f
+$ git checkout HEAD -- data/all_v2.csv.dvc && dvc checkout
+M       data/all_v2.csv
+ae21d4d1e9e468419167daca850261a9

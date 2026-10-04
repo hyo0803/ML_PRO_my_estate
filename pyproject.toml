@@ -13,7 +13,10 @@ dependencies = [
     "numpy",
     "scikit-learn>=1.6,<1.7",
     "joblib",
-    "psycopg[binary]"
+    "psycopg[binary]",
+    "mlflow-skinny>=3.16,<4",
+    "skops>=0.11",
+    "matplotlib>=3.11.2",
 ]
 
 [dependency-groups]
@@ -26,6 +29,7 @@ dev = [
     "matplotlib",
     "seaborn",
     "ruff",
+    "dvc>=3.67.1",
 ]
 
 [build-system]

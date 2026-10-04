@@ -1,0 +1,10 @@
+$ uv run dvc pull
+Using CPython 3.12.13 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building estate-service @ file:///Users/yaseminkhertek/%D0%A3%D1%87%D0%B5%D0%B1%D0%B0/%D0%9A%D0%A3%D0%A0%D0%A1%D0%AB/ML%20PRO/lesson_1/estate_clone
+warning: `build_system.requires = ["uv-build>=0.10,<0.11"]` does not contain the current uv version 0.12.15
+      Built estate-service @ file:///Users/yaseminkhertek/%D0%A3%D1%87%D0%B5%D0%B1%D0%B0/%D0%9A%D0%A3%D0%A0%D0%A1%D0%AB/ML%20PRO/lesson_1/estate_clone
+A       data/all_v2.csv
+1 file fetched and 1 file added
+-rw-r--r--@ 1 yaseminkhertek  staff  408065199 Oct  4 22:20 data/all_v2.csv
+ae21d4d1e9e468419167daca850261a9
