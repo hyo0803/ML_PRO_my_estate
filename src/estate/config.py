@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     model_path: str = 'artifact/model.joblib'
     database_url: str | None = None
     log_level: str = 'INFO'
+    # Реестр MLflow: без MODEL_NAME модель грузится из model_path (тесты в CI)
+    model_name: str | None = None
+    model_alias: str = 'champion'
+    mlflow_tracking_uri: str = 'http://mlflow.mlops:5000'
 
     # Обучение
     data_path: str = 'data/all_v2.csv'
