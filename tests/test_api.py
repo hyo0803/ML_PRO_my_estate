@@ -1,7 +1,10 @@
 def test_health(client):
     r = client.get("/health")
     assert r.status_code == 200
-    assert "model_version" in r.json()
+    body = r.json()
+    assert "model_version" in body
+    assert body["model_path"].endswith(".joblib")
+    assert "log_level" in body
     
     
 def test_ready(client):
